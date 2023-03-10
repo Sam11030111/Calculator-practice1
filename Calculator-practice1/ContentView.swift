@@ -198,7 +198,6 @@ extension Color {
     static let darkEnd = Color(red: 255/255, green: 222/255, blue: 173/255)
     static let fire = Color(red: 255/255, green: 127/255, blue: 36/255)
     static let screen = Color(red: 255/255, green: 225/255, blue: 255/255)
-    static let number = Color(red: 139/255, green: 101/255, blue: 8/255)
 }
 
 extension LinearGradient {
