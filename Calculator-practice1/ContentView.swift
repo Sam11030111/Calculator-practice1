@@ -28,55 +28,66 @@ enum CalculatButton: String {
     case percent = "%"
     case negative = "-/+"
     
-    var btnColor: Color {
+    var btnColor: some View {
         switch self {
-        case .divide, .multiply, .subtract, .add, .equal:
-            return .black
-        case .clear, .negative, .percent:
-            return .white
+        case .clear:
+            return LinearGradient(.orange)
+        case .add, .subtract, .multiply, .divide, .equal:
+            return LinearGradient(.black)
         default:
-            return .white
+            return LinearGradient(.indigo, .black)
         }
     }
 }
 
 struct DarkButton: ButtonStyle {
+    var btn: CalculatButton
+    
     func makeBody(configuration: Self.Configuration) -> some View {
         configuration.label
-            .frame(width: 80, height: 80, alignment: .center)
+            .frame(width: btnWidth(item: btn), height: btnHeight(), alignment: .center)
             .background(
-                DarkBackground(isTapped: configuration.isPressed, shape: RoundedRectangle(cornerRadius: 40))
+                ButtonBackground(isTapped: configuration.isPressed, shape: RoundedRectangle(cornerRadius: btnWidth(item: btn) / 2))
             )
+    }
+    
+    func btnWidth(item: CalculatButton) -> CGFloat {
+        if item == .zero {
+            return (UIScreen.main.bounds.width - 4*20) / 2
+        }
+        return (UIScreen.main.bounds.width - 5*20) / 4
+    }
+    
+    func btnHeight() -> CGFloat {
+        return (UIScreen.main.bounds.width - 5*20) / 4
     }
 }
 
-// DarkBackgroundButton and Shapes
-struct DarkBackground<myShape: Shape>: View {
+struct ButtonBackground<myshape: Shape>: View {
     var isTapped: Bool
-    var shape: myShape
-
+    var shape: myshape
+    
     var body: some View {
         ZStack {
             if isTapped {
                 shape
-                    .fill(LinearGradient(Color.darkEnd, Color.darkStart))
-                    .overlay(shape.stroke(LinearGradient(Color.darkStart, Color.darkEnd), lineWidth: 4))
-                      
-                    .shadow(color: Color.darkStart, radius: 10, x: -5, y: -5)
-                    .shadow(color: Color.darkEnd, radius: 5, x: -5, y: -5)
+                    .fill(LinearGradient(.black, .indigo))
+                    .overlay(shape.stroke(LinearGradient(Color.black, .white), lineWidth: 2))
+                    .shadow(color: Color.indigo, radius: 5, x: 1, y: 1)
+                    .shadow(color: Color.black, radius: 5, x: -1, y: -1)
                 
             } else {
                 shape
-                    .fill(LinearGradient(Color.darkStart, Color.darkEnd))
-                    .overlay(shape.stroke(LinearGradient(Color.darkStart, Color.darkEnd), lineWidth: 4))
+                    .fill(LinearGradient(Color.white, Color.black))
+                    .overlay(shape.stroke(LinearGradient(Color.white, Color.indigo), lineWidth: 2))
                     .shadow(color: Color.black.opacity(0.1), radius: 10, x: -10, y: -10)
-                    .shadow(color: Color.darkEnd, radius: 10, x: 10, y: 10)
+                    .shadow(color: Color.black, radius: 5, x: 5, y: 5)
             }
         }
     }
 }
 
-enum Operation: String {
+enum Operation {
     case add, subtract, multiply, divide, none
 }
 
@@ -90,32 +101,32 @@ struct ContentView: View {
         [.zero, .decimal, .equal]
     ]
     
-    @State var currentOperation: Operation = .none
+    @State var value = "0"
     @State var operationname = ""
     @State var runningNumber = 0
-    @State var value = ""
+    @State var currentOperation: Operation = .none
     
     var body: some View {
         ZStack {
-            LinearGradient(Color.darkStart, Color.darkEnd).edgesIgnoringSafeArea(.all)
+            LinearGradient(.white, .indigo).ignoresSafeArea(.all)
             VStack {
                 ZStack {
                     RoundedRectangle(cornerRadius: 20)
-                        .foregroundColor(Color.screen)
+                        .foregroundColor(.white)
                         .overlay {
-                            RoundedRectangle(cornerRadius: 20).stroke(lineWidth: 5)
-                                .foregroundColor(.black)
+                            RoundedRectangle(cornerRadius: 20).stroke(lineWidth: 3).foregroundColor(.black)
                         }
+                        .frame(height: 250)
+                        .shadow(radius: 10, x: 5, y: 5)
+                        .padding()
                     
                     HStack {
                         Spacer()
-                        Text("0")
-                            .font(.custom("digital-7", size: 100))
-                            .foregroundColor(.red)
-                            .frame(height: 100)
+                        Text(value)
+                            .font(.custom("digital-7", size: 80))
                     }
-                    .offset(x: -10, y: -15)
-                    .padding(10)
+                    .offset(x: -20, y: -20)
+                    .padding()
                     
                     HStack {
                         Image(systemName: "play.fill")
@@ -124,36 +135,42 @@ struct ContentView: View {
                             .font(.custom("digital-7", size: 30))
                         Spacer()
                     }
-                    .offset(x: 0, y: 110)
-                    .padding(20)
+                    .offset(x: 0, y: 100)
+                    .padding(30)
+                    
+                    
                 }
-                .padding(15) // 上方長方形View
-                               
-                Spacer().frame(width: 0, height: 30)
+                .padding(10)
                 
-                ForEach(buttons, id: \.self) { row in
-                    HStack(spacing: 10) {
-                        ForEach(row, id: \.self) { btn in
+                Spacer().frame(height: 30)
+                
+                ForEach(buttons, id: \.self) { rows in
+                    HStack(spacing: 20) {
+                        ForEach(rows, id: \.self) { btn in
                             Button {
-                                self.didtap(btn: btn)
+                                self.btnTap(btn: btn)
                             } label: {
                                 Text(btn.rawValue)
                                     .bold()
                                     .font(.system(size: 30))
-                                    .frame(width: btnWidth(), height: btnHeight())
-                                    .foregroundColor(btn.btnColor)
-                                    .background(Color.fire)
-                                    .cornerRadius(btnWidth() / 2)
+                                    .frame(width: btnWidth(item: btn), height: btnHeight())
+                                    .foregroundColor(.white)
+                                    .background(btn.btnColor)
+                                    .cornerRadius(btnWidth(item: btn) / 2)
                             }
-                            .buttonStyle(DarkButton())
+                            .buttonStyle(DarkButton(btn: btn))
                         }
                     }
+                    .padding(.bottom, 5)
                 }
             }
         }
     }
     
-    func btnWidth() -> CGFloat {
+    func btnWidth(item: CalculatButton) -> CGFloat {
+        if item == .zero {
+            return (UIScreen.main.bounds.width - 4*20) / 2
+        }
         return (UIScreen.main.bounds.width - 5*20) / 4
     }
     
@@ -161,26 +178,59 @@ struct ContentView: View {
         return (UIScreen.main.bounds.width - 5*20) / 4
     }
     
-    func didtap(btn: CalculatButton) {
+    func btnTap(btn: CalculatButton) {
         switch btn {
         case .add, .subtract, .multiply, .divide, .equal:
             if btn == .add {
+                self.currentOperation = .add
+                self.runningNumber = Int(self.value) ?? 0
+                print("\(self.value)")
                 self.operationname = "ADD"
             } else if btn == .subtract {
+                self.currentOperation = .subtract
+                self.runningNumber = Int(self.value) ?? 0
                 self.operationname = "SUBTRACT"
             } else if btn == .multiply {
+                self.currentOperation = .multiply
+                self.runningNumber = Int(self.value) ?? 0
                 self.operationname = "MULTIPLY"
             } else if btn == .divide {
+                self.currentOperation = .divide
+                self.runningNumber = Int(self.value) ?? 0
                 self.operationname = "DIVIDE"
             } else if btn == .equal {
+                let runningValue = self.runningNumber
+                let currentValue = Int(self.value) ?? 0
+                switch self.currentOperation {
+                case .add:
+                    self.value = "\(runningValue + currentValue)"
+                case .subtract:
+                    self.value = "\(runningValue - currentValue)"
+                case .multiply:
+                    self.value = "\(runningValue * currentValue)"
+                case .divide:
+                    self.value = "\(runningValue / currentValue)"
+                case .none:
+                    break
+                }
                 self.operationname = "EQUAL"
             }
+
+            if btn != .equal {
+                self.value = "0"
+            }
         case .clear:
+            self.value = "0"
             self.operationname = "CLEAR"
-        case .negative, .percent:
+        case .decimal, .negative, .percent:
             break
         default:
-            self.operationname = btn.rawValue
+            let number = btn.rawValue
+            if self.value == "0" {
+                value = number
+            } else {
+                self.value = "\(self.value)\(number)"
+            }
         }
     }
 }
@@ -191,15 +241,7 @@ struct ContentView_Previews: PreviewProvider {
     }
 }
 
-
-// MARK: - Extension
-extension Color {
-    static let darkStart = Color(red: 255/255, green: 250/255, blue: 250/255)
-    static let darkEnd = Color(red: 255/255, green: 222/255, blue: 173/255)
-    static let fire = Color(red: 255/255, green: 127/255, blue: 36/255)
-    static let screen = Color(red: 255/255, green: 225/255, blue: 255/255)
-}
-
+//MARK: - Extension
 extension LinearGradient {
     init(_ colors: Color...) {
         self.init(gradient: Gradient(colors: colors), startPoint: .topTrailing, endPoint: .bottomTrailing)
